@@ -1,0 +1,27 @@
+# Ignorar directorios IDE y editores
+.vscode/
+.idea/
+*.swp
+
+# Archivos de configuración sensibles
+.env
+.env.local
+
+# Dependencias (si usas Composer en el futuro)
+vendor/
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+
+# Subidas de usuarios e imágenes
+uploads/*
+!uploads/.gitkeep
+assets/logo_tenant_*.png
+assets/logo_tenant_*.jpg
+assets/logo_tenant_*.svg
+assets/logo_tenant_*.webp
+
+# Registros y logs
+*.log
+logs/

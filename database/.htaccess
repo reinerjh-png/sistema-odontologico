@@ -1,0 +1,3 @@
+# Bloquear acceso directo a todos los archivos en esta carpeta
+Order Allow,Deny
+Deny from all
