@@ -498,7 +498,7 @@ $estaBloqueado = isset($_SESSION['login_bloqueado_hasta']) && ($_SESSION['login_
                 <div class="circle-deco circle-deco-3"></div>
 
                 <!-- Logo -->
-                <img src="assets/logo.png" alt="<?= htmlspecialchars($tenant['clinic_name']) ?>" class="welcome-logo"
+                <img src="<?= htmlspecialchars($tenant['logo_url']) ?>" alt="<?= htmlspecialchars($tenant['clinic_name']) ?>" class="welcome-logo"
                      onerror="this.style.display='none'">
 
                 <!-- Textos -->
