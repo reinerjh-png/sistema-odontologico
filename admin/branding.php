@@ -313,7 +313,7 @@ $pageTitle = 'Personalización de Branding';
                                 </div>
                                 <div class="color-suggestions">
                                     <div class="color-dot" style="background:#1B2B4B;" onclick="setColor('primary', '#1B2B4B')" title="Navy"></div>
-                                    <div class="color-dot" style="background:#0F172A;" onclick="setColor('primary', '#0F172A')" title="Slate"></div>
+                                    <div class="color-dot" style="background:#C9A84C;" onclick="setColor('primary', '#C9A84C')" title="Dorado"></div>
                                     <div class="color-dot" style="background:#047857;" onclick="setColor('primary', '#047857')" title="Emerald"></div>
                                     <div class="color-dot" style="background:#4338CA;" onclick="setColor('primary', '#4338CA')" title="Indigo"></div>
                                     <div class="color-dot" style="background:#BE123C;" onclick="setColor('primary', '#BE123C')" title="Rose"></div>
@@ -345,7 +345,7 @@ $pageTitle = 'Personalización de Branding';
                                 </div>
                                 <div class="color-suggestions">
                                     <div class="color-dot" style="background:#1B2B4B;" onclick="setColor('sidebar', '#1B2B4B')" title="Navy"></div>
-                                    <div class="color-dot" style="background:#1E293B;" onclick="setColor('sidebar', '#1E293B')" title="Slate"></div>
+                                    <div class="color-dot" style="background:#A0781E;" onclick="setColor('sidebar', '#A0781E')" title="Dorado"></div>
                                     <div class="color-dot" style="background:#18181B;" onclick="setColor('sidebar', '#18181B')" title="Zinc"></div>
                                     <div class="color-dot" style="background:#172554;" onclick="setColor('sidebar', '#172554')" title="Blue"></div>
                                     <div class="color-dot" style="background:#4A2B2B;" onclick="setColor('sidebar', '#4A2B2B')" title="Dark Red"></div>
