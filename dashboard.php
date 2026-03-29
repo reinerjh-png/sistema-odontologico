@@ -220,7 +220,7 @@ $pageTitle = 'Historias Clínicas';
                         </h2>
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <span class="text-gray" style="font-size: 0.82rem;">
-                                <?php echo number_format($totalRegistros); ?> registro(s) &mdash;
+                                <?php echo number_format($totalRegistros); ?> registros &mdash;
                                 página <?php echo $paginaActual; ?> de <?php echo $totalPaginas; ?>
                             </span>
                             <?php if ($verArchivados || $verCitas): ?>

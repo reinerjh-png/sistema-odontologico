@@ -8,7 +8,7 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'sistema_clinica_dental');
+define('DB_NAME', 'sistema_odontologico');
 
 // Configuración del sitio
 define('SITE_NAME', 'Clínica Dental Premium Uchuya');
