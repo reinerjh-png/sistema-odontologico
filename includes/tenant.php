@@ -19,6 +19,7 @@ function cargarTenant($pdo) {
         'color_secondary'  => '#2A4A7F',
         'color_accent'     => '#4A90D9',
         'color_sidebar'    => '#1B2B4B',
+        'theme_mode'       => 'light',
     ];
 
     try {
@@ -31,6 +32,7 @@ function cargarTenant($pdo) {
             $defaults['color_secondary'] = isset($row['color_secondary']) && $row['color_secondary'] ? $row['color_secondary'] : $defaults['color_secondary'];
             $defaults['color_accent']    = $row['color_accent'] ?: $defaults['color_accent'];
             $defaults['color_sidebar']   = $row['color_sidebar'] ?: $defaults['color_sidebar'];
+            $defaults['theme_mode']      = isset($row['theme_mode']) && $row['theme_mode'] ? $row['theme_mode'] : $defaults['theme_mode'];
         }
     } catch (Exception $e) {
         // Table might not exist yet; use defaults silently
@@ -48,7 +50,28 @@ function renderTenantCssVars($tenant) {
     $sc = htmlspecialchars($tenant['color_secondary']);
     $a  = htmlspecialchars($tenant['color_accent']);
     $s  = htmlspecialchars($tenant['color_sidebar']);
-    echo "<style>:root{--color-primary:{$p};--color-secondary:{$sc};--color-accent:{$a};--color-sidebar:{$s};}</style>\n";
+    $mode = isset($tenant['theme_mode']) ? $tenant['theme_mode'] : 'light';
+    
+    echo "<style>\n";
+    echo ":root {\n";
+    echo "  --color-primary: {$p};\n";
+    echo "  --color-secondary: {$sc};\n";
+    echo "  --color-accent: {$a};\n";
+    echo "  --color-sidebar: {$s};\n";
+    
+    if ($mode === 'dark') {
+        echo "  --color-bg: #111827;\n";
+        echo "  --color-surface: #1F2937;\n";
+        echo "  --color-text: #F9FAFB;\n";
+        echo "  --color-text-secondary: #9CA3AF;\n";
+        echo "  --color-text-light: #6B7280;\n";
+        echo "  --color-border: #374151;\n";
+        echo "  --color-border-light: #1F2937;\n";
+        echo "  --color-bg-hover: rgba(255, 255, 255, 0.05);\n";
+    }
+    
+    echo "}\n";
+    echo "</style>\n";
 }
 
 /**

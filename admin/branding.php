@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
     $color_primary = sanitizar($_POST['color_primary'] ?? '#1B2B4B');
     $color_accent = sanitizar($_POST['color_accent'] ?? '#4A90D9');
     $color_sidebar = sanitizar($_POST['color_sidebar'] ?? '#1B2B4B');
+    $theme_mode = in_array($_POST['theme_mode'] ?? 'light', ['light', 'dark']) ? $_POST['theme_mode'] : 'light';
     
     // Validar colores hex
     function is_hex($str) {
@@ -60,11 +61,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
         // Verificar si existe el registro, si no, crear
         $check = $pdo->query("SELECT id FROM tenant_config LIMIT 1")->fetch();
         if ($check) {
-            $stmt = $pdo->prepare("UPDATE tenant_config SET clinic_name = ?, logo_url = ?, color_primary = ?, color_accent = ?, color_sidebar = ? WHERE id = ?");
-            $stmt->execute([$clinic_name, $logo_url, $color_primary, $color_accent, $color_sidebar, $check['id']]);
+            $stmt = $pdo->prepare("UPDATE tenant_config SET clinic_name = ?, logo_url = ?, color_primary = ?, color_accent = ?, color_sidebar = ?, theme_mode = ? WHERE id = ?");
+            $stmt->execute([$clinic_name, $logo_url, $color_primary, $color_accent, $color_sidebar, $theme_mode, $check['id']]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO tenant_config (clinic_name, logo_url, color_primary, color_accent, color_sidebar) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$clinic_name, $logo_url, $color_primary, $color_accent, $color_sidebar]);
+            $stmt = $pdo->prepare("INSERT INTO tenant_config (clinic_name, logo_url, color_primary, color_accent, color_sidebar, theme_mode) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$clinic_name, $logo_url, $color_primary, $color_accent, $color_sidebar, $theme_mode]);
         }
         
         // Limpiar caché de sesión para recargar estilo en la próxima vista
@@ -138,7 +139,7 @@ $pageTitle = 'Personalización de Branding';
         
         /* Preview Styles */
         .preview-card {
-            background: #F4F6F9;
+            background: var(--color-bg);
             border: 1px solid var(--color-border);
             border-radius: var(--radius-lg);
             overflow: hidden;
@@ -303,6 +304,23 @@ $pageTitle = 'Personalización de Branding';
                             </div>
                             
                             <div style="border-top: 1px solid var(--color-border); margin: 25px 0;"></div>
+                            <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: var(--color-text);">Tema Visual del Sistema</h3>
+                            
+                            <div class="form-group" style="margin-bottom: 25px;">
+                                <div style="display: flex; gap: 20px; align-items: center;">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--color-text);">
+                                        <input type="radio" name="theme_mode" id="theme_light" value="light" <?= (!isset($tenant['theme_mode']) || $tenant['theme_mode'] !== 'dark') ? 'checked' : '' ?>>
+                                        <i class="fas fa-sun text-gray"></i> Claro
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--color-text);">
+                                        <input type="radio" name="theme_mode" id="theme_dark" value="dark" <?= (isset($tenant['theme_mode']) && $tenant['theme_mode'] === 'dark') ? 'checked' : '' ?>>
+                                        <i class="fas fa-moon text-gray"></i> Oscuro
+                                    </label>
+                                </div>
+                                <small class="text-gray mt-1" style="display:block;">Afecta el fondo y textos de todo el sistema para todos los usuarios.</small>
+                            </div>
+
+                            <div style="border-top: 1px solid var(--color-border); margin: 25px 0;"></div>
                             <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: var(--color-text);">Colores Corporativos</h3>
                             
                             <div class="form-group" style="margin-bottom: 20px;">
@@ -384,22 +402,22 @@ $pageTitle = 'Personalización de Branding';
                             <!-- Content Preview -->
                             <div class="preview-content">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                                    <h4 style="margin:0; font-size:1.2rem; color: #1E293B;">Panel de Control</h4>
-                                    <div style="background:white; padding:5px 15px; border-radius:30px; border:1px solid #E2E8F0; font-size:0.8rem; color:#64748B;">
+                                    <h4 style="margin:0; font-size:1.2rem; color: var(--color-text);">Panel de Control</h4>
+                                    <div style="background:var(--color-surface); padding:5px 15px; border-radius:30px; border:1px solid var(--color-border); font-size:0.8rem; color:var(--color-text-secondary);">
                                         <i class="fas fa-search"></i> Buscar...
                                     </div>
                                 </div>
                                 
-                                <div style="background:white; padding:20px; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); border:1px solid #E2E8F0;">
-                                    <h5 style="margin:0 0 15px 0; font-size:1rem; color:#334155;">Estadísticas</h5>
+                                <div style="background:var(--color-surface); padding:20px; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); border:1px solid var(--color-border);">
+                                    <h5 style="margin:0 0 15px 0; font-size:1rem; color:var(--color-text);">Estadísticas</h5>
                                     <div style="display:flex; gap:15px; margin-bottom:20px;">
-                                        <div style="flex:1; background:#F8FAFC; padding:15px; border-radius:8px; border:1px solid #E2E8F0;">
-                                            <div style="font-size:0.75rem; color:#64748B; text-transform:uppercase;">Pacientes</div>
-                                            <div style="font-size:1.5rem; font-weight:bold; color:#0F172A; margin-top:5px;">1,248</div>
+                                        <div style="flex:1; background:var(--color-bg); padding:15px; border-radius:8px; border:1px solid var(--color-border);">
+                                            <div style="font-size:0.75rem; color:var(--color-text-secondary); text-transform:uppercase;">Pacientes</div>
+                                            <div style="font-size:1.5rem; font-weight:bold; color:var(--color-text); margin-top:5px;">1,248</div>
                                         </div>
-                                        <div style="flex:1; background:#F8FAFC; padding:15px; border-radius:8px; border:1px solid #E2E8F0;">
-                                            <div style="font-size:0.75rem; color:#64748B; text-transform:uppercase;">Citas Hoy</div>
-                                            <div style="font-size:1.5rem; font-weight:bold; color:#0F172A; margin-top:5px;">12</div>
+                                        <div style="flex:1; background:var(--color-bg); padding:15px; border-radius:8px; border:1px solid var(--color-border);">
+                                            <div style="font-size:0.75rem; color:var(--color-text-secondary); text-transform:uppercase;">Citas Hoy</div>
+                                            <div style="font-size:1.5rem; font-weight:bold; color:var(--color-text); margin-top:5px;">12</div>
                                         </div>
                                     </div>
                                     <button class="preview-btn" id="previewBtnPrimary">
@@ -433,9 +451,10 @@ $pageTitle = 'Personalización de Branding';
             sidebar: "<?= htmlspecialchars($tenant['color_sidebar']) ?>"
         };
         
-        // Elementos del DOM
         const inputs = {
             name: document.getElementById('clinic_name'),
+            themeLight: document.getElementById('theme_light'),
+            themeDark: document.getElementById('theme_dark'),
             primary: document.getElementById('color_primary'),
             primaryHex: document.getElementById('color_primary_hex'),
             accent: document.getElementById('color_accent'),
@@ -465,6 +484,27 @@ $pageTitle = 'Personalización de Branding';
             previewEl.btn.style.backgroundColor = inputs.primary.value;
             previewEl.activeNav.style.borderLeftColor = inputs.accent.value;
             
+            // Configurar tema claro u oscuro en vivo
+            if (inputs.themeDark && inputs.themeDark.checked) {
+                document.documentElement.style.setProperty('--color-bg', '#111827');
+                document.documentElement.style.setProperty('--color-surface', '#1F2937');
+                document.documentElement.style.setProperty('--color-text', '#F9FAFB');
+                document.documentElement.style.setProperty('--color-text-secondary', '#9CA3AF');
+                document.documentElement.style.setProperty('--color-text-light', '#6B7280');
+                document.documentElement.style.setProperty('--color-border', '#374151');
+                document.documentElement.style.setProperty('--color-border-light', '#1F2937');
+                document.documentElement.style.setProperty('--color-bg-hover', 'rgba(255, 255, 255, 0.05)');
+            } else {
+                document.documentElement.style.setProperty('--color-bg', '#F4F6F9');
+                document.documentElement.style.setProperty('--color-surface', '#FFFFFF');
+                document.documentElement.style.setProperty('--color-text', '#2D3748');
+                document.documentElement.style.setProperty('--color-text-secondary', '#718096');
+                document.documentElement.style.setProperty('--color-text-light', '#A0AEC0');
+                document.documentElement.style.setProperty('--color-border', '#E2E8F0');
+                document.documentElement.style.setProperty('--color-border-light', '#EDF2F7');
+                document.documentElement.style.setProperty('--color-bg-hover', '#F9FAFB');
+            }
+            
             // Opcional: Modificar también los estilos de la interfaz real para previsualización total
             document.documentElement.style.setProperty('--color-primary', inputs.primary.value);
             document.documentElement.style.setProperty('--color-accent', inputs.accent.value);
@@ -493,6 +533,7 @@ $pageTitle = 'Personalización de Branding';
         // Función para restaurar
         function resetForm() {
             inputs.name.value = originalName;
+            if(inputs.themeLight) inputs.themeLight.checked = true; // Por defecto restaurar light
             setColor('primary', originalColors.primary);
             setColor('accent', originalColors.accent);
             setColor('sidebar', originalColors.sidebar);
@@ -506,6 +547,9 @@ $pageTitle = 'Personalización de Branding';
         inputs.primary.addEventListener('input', updateColors);
         inputs.accent.addEventListener('input', updateColors);
         inputs.sidebar.addEventListener('input', updateColors);
+        
+        if(inputs.themeLight) inputs.themeLight.addEventListener('change', updateColors);
+        if(inputs.themeDark) inputs.themeDark.addEventListener('change', updateColors);
         
         inputs.primaryHex.addEventListener('input', () => handleHexInput('primary'));
         inputs.accentHex.addEventListener('input', () => handleHexInput('accent'));
