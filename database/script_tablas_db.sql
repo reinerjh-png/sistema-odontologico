@@ -236,6 +236,11 @@ SELECT 'Clínica Dental Premium Uchuya', 'assets/logo.png', '#1B2B4B', '#4A90D9'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `tenant_config` LIMIT 1);
 
 -- --------------------------------------------------------
+-- Actualizaciones y Migraciones
+-- --------------------------------------------------------
+
+-- Añade la columna 'theme_mode' a la tabla tenant_config (si ya existe en el CREATE TABLE de arriba, esto es solo por referencia para DBs existentes)
+-- ALTER TABLE `tenant_config` ADD COLUMN `theme_mode` VARCHAR(20) NOT NULL DEFAULT 'light' AFTER `color_sidebar`;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
