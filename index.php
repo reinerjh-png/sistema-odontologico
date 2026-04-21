@@ -37,7 +37,12 @@ $estaBloqueado = isset($_SESSION['login_bloqueado_hasta']) && ($_SESSION['login_
     <title><?= htmlspecialchars($tenant['clinic_name']) ?> — Iniciar Sesión</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/fontawesome/css/all.min.css">
-    <?php renderTenantCssVars($tenant); ?>
+    <?php 
+        // Forzar modo claro solo en el login para evitar problemas de contraste (ej. autocompletado)
+        $tenant_login = $tenant;
+        $tenant_login['theme_mode'] = 'light';
+        renderTenantCssVars($tenant_login); 
+    ?>
     <style>
         /* ── Full-page split login ── */
         .login-page {
