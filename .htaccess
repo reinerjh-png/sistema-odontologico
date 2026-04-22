@@ -1,3 +1,16 @@
+# -------------------------------------------------------
+# Redirigir todo el tráfico HTTP → HTTPS
+# Compatible con InfinityFree (proxy inverso)
+# -------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Condición 1: la conexión directa no es HTTPS
+    # Condición 2: el proxy no marcó la petición como HTTPS (InfinityFree)
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
 <IfModule mod_expires.c>
     # Enable expirations
     ExpiresActive On 
