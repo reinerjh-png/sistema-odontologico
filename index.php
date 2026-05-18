@@ -602,7 +602,7 @@ $estaBloqueado = isset($_SESSION['login_bloqueado_hasta']) && ($_SESSION['login_
 
                 <!-- Footer dev -->
                 <div class="form-footer-dev">
-                    &copy; 2026 &mdash; <span>Desarrollado por: Tec. Reiner Jimenez</span>
+                    &copy; 2026 &mdash; Desarrollado por: <a href="https://www.linkedin.com/in/reiner-jairo-jim%C3%A9nez-huaman-9234a9388/" target="_blank" rel="noopener noreferrer" className="text-white hover:underline"><span>Reiner Jimenez</span></a>
                 </div>
             </div>
 
