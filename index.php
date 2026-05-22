@@ -28,6 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Verificar si está bloqueado (para deshabilitar el formulario)
 $estaBloqueado = isset($_SESSION['login_bloqueado_hasta']) && ($_SESSION['login_bloqueado_hasta'] - time()) > 0;
+
+// Leer mensaje de sesión (ej. cuenta desactivada por el administrador)
+if (empty($error) && isset($_SESSION['mensaje'])) {
+    $error = $_SESSION['mensaje'];
+    unset($_SESSION['mensaje'], $_SESSION['tipo_mensaje']);
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -597,12 +603,12 @@ $estaBloqueado = isset($_SESSION['login_bloqueado_hasta']) && ($_SESSION['login_
                 <!-- Slogan -->
                 <div class="login-slogan">
                     <i class="fas fa-tooth"></i>
-                    Cuidamos tu sonrisa
+                    Sistema de Gestión Odontológico - Uso interno exclusivo
                 </div>
 
                 <!-- Footer dev -->
                 <div class="form-footer-dev">
-                    &copy; 2026 &mdash; Desarrollado por: <a href="https://www.linkedin.com/in/reiner-jairo-jim%C3%A9nez-huaman-9234a9388/" target="_blank" rel="noopener noreferrer" className="text-white hover:underline"><span>Reiner Jimenez</span></a>
+                    &copy; 2026 &mdash; Desarrollado por <a href="https://www.linkedin.com/in/reiner-jairo-jim%C3%A9nez-huaman-9234a9388/" target="_blank" rel="noopener noreferrer" className="text-white hover:underline"><span>Reiner Jimenez</span></a>
                 </div>
             </div>
 

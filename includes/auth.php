@@ -13,25 +13,80 @@ define('MAX_INTENTOS_LOGIN', 5);
 define('BLOQUEO_MINUTOS', 15);
 
 /**
- * Verifica si el usuario tiene una sesión activa.
- * Si no la tiene, redirige al login.
+ * Calcula el prefijo de ruta relativo al directorio raíz del proyecto
+ * para redirigir correctamente desde cualquier subdirectorio.
+ */
+function _getRedirectPrefix()
+{
+    $scriptPath = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME']);
+    $authDir    = str_replace('\\', '/', dirname(__DIR__));
+
+    if (strpos($scriptPath, $authDir) === 0) {
+        $relPath = substr(dirname($scriptPath), strlen($authDir) + 1);
+        $depth   = $relPath ? substr_count($relPath, '/') + 1 : 0;
+        return str_repeat('../', $depth);
+    }
+    return '';
+}
+
+/**
+ * Verifica si el usuario tiene una sesión activa Y si su cuenta
+ * sigue habilitada en la base de datos.
+ *
+ * Si la sesión no existe → redirige al login.
+ * Si la cuenta fue desactivada o eliminada mientras tenía sesión
+ * activa → destruye la sesión y redirige al login con aviso.
+ *
+ * SEGURIDAD: Esta función resuelve la vulnerabilidad que permitía
+ * a un usuario con sesión activa seguir usando el sistema incluso
+ * después de que el administrador desactivara su cuenta.
  */
 function verificarSesion()
 {
+    // 1. Verificar que exista la sesión
     if (!isset($_SESSION['autenticado']) || $_SESSION['autenticado'] !== true) {
-        $scriptPath = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME']);
-        $authDir = str_replace('\\', '/', dirname(__DIR__));
-
-        if (strpos($scriptPath, $authDir) === 0) {
-            $relPath = substr(dirname($scriptPath), strlen($authDir) + 1);
-            $depth = $relPath ? substr_count($relPath, '/') + 1 : 0;
-            $prefix = str_repeat('../', $depth);
-        } else {
-            $prefix = '';
-        }
-
-        header('Location: ' . $prefix . 'index.php');
+        header('Location: ' . _getRedirectPrefix() . 'index.php');
         exit;
+    }
+
+    // 2. Verificar en la BD que la cuenta aún esté activa
+    //    Solo si tenemos usuario_id en sesión y acceso a $pdo
+    if (isset($_SESSION['usuario_id'])) {
+        global $pdo;
+        if ($pdo instanceof PDO) {
+            try {
+                $stmt = $pdo->prepare("SELECT estado FROM usuarios WHERE id = ? LIMIT 1");
+                $stmt->execute([$_SESSION['usuario_id']]);
+                $userDb = $stmt->fetch();
+
+                // Cuenta desactivada o eliminada → cerrar sesión inmediatamente
+                if (!$userDb || $userDb['estado'] == 0) {
+                    // Destruir sesión completamente
+                    $_SESSION = [];
+                    if (ini_get('session.use_cookies')) {
+                        $params = session_get_cookie_params();
+                        setcookie(
+                            session_name(), '',
+                            time() - 42000,
+                            $params['path'], $params['domain'],
+                            $params['secure'], $params['httponly']
+                        );
+                    }
+                    session_destroy();
+
+                    // Reiniciar sesión solo para pasar el mensaje de aviso
+                    session_start();
+                    $_SESSION['mensaje']      = 'Su cuenta ha sido desactivada. Contacte al administrador.';
+                    $_SESSION['tipo_mensaje'] = 'error';
+
+                    header('Location: ' . _getRedirectPrefix() . 'index.php');
+                    exit;
+                }
+            } catch (Exception $e) {
+                // Si la BD no responde, no bloqueamos el acceso para no
+                // tumbar el sistema. El check fallará silenciosamente.
+            }
+        }
     }
 }
 
@@ -49,18 +104,7 @@ function esAdmin()
 function requiereAdmin()
 {
     if (!esAdmin()) {
-        $scriptPath = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME']);
-        $authDir = str_replace('\\', '/', dirname(__DIR__));
-
-        if (strpos($scriptPath, $authDir) === 0) {
-            $relPath = substr(dirname($scriptPath), strlen($authDir) + 1);
-            $depth = $relPath ? substr_count($relPath, '/') + 1 : 0;
-            $prefix = str_repeat('../', $depth);
-        } else {
-            $prefix = '';
-        }
-
-        header('Location: ' . $prefix . 'dashboard.php');
+        header('Location: ' . _getRedirectPrefix() . 'dashboard.php');
         exit;
     }
 }
