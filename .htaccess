@@ -1,6 +1,6 @@
 # -------------------------------------------------------
 # Redirigir todo el tráfico HTTP → HTTPS
-# Compatible con InfinityFree (proxy inverso)
+# Compatible con InfinityFree (proxy inverso con X-Forwarded-Proto)
 # -------------------------------------------------------
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -9,6 +9,24 @@
     RewriteCond %{HTTPS} off
     RewriteCond %{HTTP:X-Forwarded-Proto} !https
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# -------------------------------------------------------
+# Cabeceras de Seguridad HTTP
+# Ayudan a que Google Safe Browsing no marque la página
+# como engañosa y refuerzan la integridad del sitio.
+# -------------------------------------------------------
+<IfModule mod_headers.c>
+    # HSTS: obliga al navegador a usar HTTPS durante 1 año
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    # Evita que el navegador adivine el tipo MIME (previene XSS por tipo)
+    Header always set X-Content-Type-Options "nosniff"
+    # Evita que la página sea incrustada en iframes (anti-clickjacking)
+    Header always set X-Frame-Options "SAMEORIGIN"
+    # Activa el filtro XSS del navegador
+    Header always set X-XSS-Protection "1; mode=block"
+    # No enviar el Referer al salir del sitio (protege URLs internas)
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
 <IfModule mod_expires.c>

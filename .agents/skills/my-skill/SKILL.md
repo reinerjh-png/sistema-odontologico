@@ -52,6 +52,13 @@ Al agregar un módulo nuevo, respeta esta misma convención de nombres.
   en la tabla de auditoría que usa `actividad.php`.
 - Al agregar nuevas operaciones, incluye siempre su registro de auditoría.
 
+### Reglas de base de datos
+
+- No modifiques ni ejecutes la base de datos directamente.
+- Genera scripts en `/database/YYYY-MM-DD_descripcion.sql`.
+- Incluye el `ALTER TABLE` con valor DEFAULT para no romper registros existentes.
+- Incluye el índice si el campo será usado en búsquedas o filtros.
+
 ## Cómo extender el sistema
 
 ### Al agregar un módulo nuevo
@@ -91,3 +98,5 @@ Al agregar un módulo nuevo, respeta esta misma convención de nombres.
 - No introduzcas librerías externas sin aprobación explícita.
 - Entrega siempre código completo y funcional, sin TODOs ni placeholders.
 - Cada mejora debe ser retrocompatible; nada puede romper funcionalidad existente.
+
+

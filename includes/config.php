@@ -34,5 +34,13 @@ catch (PDOException $e) {
     die("Error de conexión: " . $e->getMessage());
 }
 
-// Función para iniciar sesión
+// Configuración de seguridad de cookies de sesión
+// Garantiza que las cookies de sesión solo se envíen por HTTPS
+// y no sean accesibles desde JavaScript (mitigación XSS y phishing).
+ini_set('session.cookie_secure',   1);   // Solo HTTPS
+ini_set('session.cookie_httponly', 1);   // Inaccesible desde JS
+ini_set('session.cookie_samesite', 'Lax'); // Protección CSRF básica
+ini_set('session.use_strict_mode', 1);   // Rechaza IDs de sesión no generados por el servidor
+
+// Iniciar sesión
 session_start();

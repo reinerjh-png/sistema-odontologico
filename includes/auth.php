@@ -75,6 +75,11 @@ function verificarSesion()
                     session_destroy();
 
                     // Reiniciar sesión solo para pasar el mensaje de aviso
+                    // (mismas directivas de seguridad que en config.php)
+                    ini_set('session.cookie_secure',   1);
+                    ini_set('session.cookie_httponly', 1);
+                    ini_set('session.cookie_samesite', 'Lax');
+                    ini_set('session.use_strict_mode', 1);
                     session_start();
                     $_SESSION['mensaje']      = 'Su cuenta ha sido desactivada. Contacte al administrador.';
                     $_SESSION['tipo_mensaje'] = 'error';

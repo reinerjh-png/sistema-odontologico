@@ -14,16 +14,35 @@ $basePath = getBasePath();
 $mostrarComunicado = $comunicado_activo;
 
 
-// Parámetros de búsqueda y filtro
-$busqueda     = isset($_GET['buscar'])       ? sanitizar($_GET['buscar'])       : '';
-$tipoBusqueda = isset($_GET['tipo_busqueda'])? sanitizar($_GET['tipo_busqueda']): '';
-$verCitas      = isset($_GET['ver']) && $_GET['ver'] === 'citas';
-$verArchivados = isset($_GET['ver']) && $_GET['ver'] === 'archivados';
+// -----------------------------------------------------------------------
+// Parámetros de búsqueda: se reciben por POST para no exponerlos en la URL
+// (evita el marcado de Google Safe Browsing en dashboard.php?buscar=...)
+// Los filtros de vista (?ver=) y paginación (?pagina=) siguen en GET
+// porque no contienen datos sensibles del usuario.
+// -----------------------------------------------------------------------
+$_verRaw       = isset($_POST['ver']) ? $_POST['ver'] : (isset($_GET['ver']) ? $_GET['ver'] : '');
+$verCitas      = ($verRaw = trim(strip_tags($_verRaw))) === 'citas';
+$verArchivados = $verRaw === 'archivados';
 $estadoActual  = $verArchivados ? 0 : 1;
 
-// Paginación
+// Sanitización estricta de los parámetros de búsqueda (POST)
+$busqueda     = '';
+$tipoBusqueda = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // trim() → strip_tags() → htmlspecialchars(): triple capa anti-XSS
+    $busqueda     = htmlspecialchars(strip_tags(trim($_POST['buscar']        ?? '')), ENT_QUOTES, 'UTF-8');
+    $tipoBusqueda = htmlspecialchars(strip_tags(trim($_POST['tipo_busqueda'] ?? '')), ENT_QUOTES, 'UTF-8');
+
+    // Validar que tipo_busqueda sea un valor permitido (whitelist)
+    $tiposPermitidos = ['', 'numero_historia', 'dni', 'nombre', 'tratamiento'];
+    if (!in_array($tipoBusqueda, $tiposPermitidos, true)) {
+        $tipoBusqueda = '';
+    }
+}
+
+// Paginación (Soporta POST para mantener la búsqueda oculta, y GET para navegación directa)
 define('REGISTROS_POR_PAGINA', 50);
-$paginaActual  = max(1, (int) ($_GET['pagina'] ?? 1));
+$paginaActual  = max(1, (int) ($_POST['pagina'] ?? $_GET['pagina'] ?? 1));
 $offset        = ($paginaActual - 1) * REGISTROS_POR_PAGINA;
 $totalRegistros = contarPacientes($pdo, $busqueda, $tipoBusqueda, $estadoActual, $verCitas);
 $totalPaginas   = max(1, (int) ceil($totalRegistros / REGISTROS_POR_PAGINA));
@@ -51,13 +70,16 @@ $totalCallCenter = obtenerContadorCallCenter($pdo);
 // Tratamientos para el selector de búsqueda
 $todosTratamientos = obtenerTratamientos($pdo);
 
-// Helper: armar URL manteniendo parámetros actuales, cambiando solo la página
+/**
+ * Genera el id del formulario oculto de paginación para la página $pagina.
+ * La paginación ahora funciona con un form POST oculto que conserva los
+ * parámetros de búsqueda en lugar de exponerlos en la URL.
+ */
 function urlPagina($pagina, $busqueda, $tipoBusqueda, $verCitas, $verArchivados) {
+    // Solo parámetros de navegación (sin datos de búsqueda)
     $params = ['pagina' => $pagina];
-    if ($busqueda)     $params['buscar']       = $busqueda;
-    if ($tipoBusqueda) $params['tipo_busqueda']= $tipoBusqueda;
-    if ($verCitas)     $params['ver']          = 'citas';
-    if ($verArchivados)$params['ver']          = 'archivados';
+    if ($verCitas)      $params['ver'] = 'citas';
+    if ($verArchivados) $params['ver'] = 'archivados';
     return 'dashboard.php?' . http_build_query($params);
 }
 
@@ -145,8 +167,17 @@ $pageTitle = 'Historias Clínicas';
                     </a>
                 </div>
 
-                <!-- Barra de búsqueda -->
-                <form action="" method="GET" class="search-container">
+                <!-- ================================================================
+                     Barra de búsqueda — method POST
+                     Los parámetros buscar/tipo_busqueda ya NO aparecen en la URL,
+                     eliminando el motivo del marcado de Google Safe Browsing.
+                     ================================================================ -->
+                <form action="dashboard.php<?php
+                    // Preservar filtros de vista (?ver=) en la URL del action
+                    // para que el resultado se muestre en el contexto correcto.
+                    if ($verCitas)      echo '?ver=citas';
+                    elseif ($verArchivados) echo '?ver=archivados';
+                ?>" method="POST" class="search-container" id="formBusqueda">
                     <div class="search-select-wrapper">
                         <select name="tipo_busqueda" class="search-select">
                             <option value="" <?php echo $tipoBusqueda === '' ? 'selected' : ''; ?>>Todos los campos</option>
@@ -179,9 +210,27 @@ $pageTitle = 'Historias Clínicas';
                         <i class="fas fa-search"></i> Buscar
                     </button>
                     <?php if ($busqueda): ?>
-                        <a href="dashboard.php" class="btn-buscar" style="background: var(--color-text-secondary);">
+                        <a href="dashboard.php<?php
+                            if ($verCitas)      echo '?ver=citas';
+                            elseif ($verArchivados) echo '?ver=archivados';
+                        ?>" class="btn-buscar" style="background: var(--color-text-secondary);">
                             <i class="fas fa-times"></i> Limpiar
                         </a>
+                    <?php endif; ?>
+                </form>
+
+                <!-- Formulario POST oculto para paginación --
+                     Los botones de página hacen submit de este form
+                     con el número de página deseado, preservando la búsqueda
+                     actual sin exponerla en la URL. -->
+                <form action="dashboard.php" method="POST" id="formPaginacion" style="display:none;">
+                    <input type="hidden" name="buscar"        id="pagBuscar"        value="<?php echo htmlspecialchars($busqueda); ?>">
+                    <input type="hidden" name="tipo_busqueda" id="pagTipoBusqueda"  value="<?php echo htmlspecialchars($tipoBusqueda); ?>">
+                    <input type="hidden" name="pagina"        id="pagNumero"        value="1">
+                    <?php if ($verCitas): ?>
+                        <input type="hidden" name="ver" value="citas">
+                    <?php elseif ($verArchivados): ?>
+                        <input type="hidden" name="ver" value="archivados">
                     <?php endif; ?>
                 </form>
 
@@ -333,23 +382,23 @@ $pageTitle = 'Historias Clínicas';
                     <?php if ($totalPaginas > 1): ?>
                     <div style="display:flex; justify-content:center; align-items:center; gap:6px; padding: 14px 0;">
                         <?php if ($paginaActual > 1): ?>
-                            <a href="<?php echo htmlspecialchars(urlPagina(1, $busqueda, $tipoBusqueda, $verCitas, $verArchivados)); ?>" class="btn-nav btn-nav-secondary" style="padding:5px 10px;" title="Primera página"><i class="fas fa-angle-double-left"></i></a>
-                            <a href="<?php echo htmlspecialchars(urlPagina($paginaActual - 1, $busqueda, $tipoBusqueda, $verCitas, $verArchivados)); ?>" class="btn-nav btn-nav-secondary" style="padding:5px 10px;"><i class="fas fa-angle-left"></i> Anterior</a>
+                            <button type="button" onclick="irPagina(1)" class="btn-nav btn-nav-secondary" style="padding:5px 10px;" title="Primera página"><i class="fas fa-angle-double-left"></i></button>
+                            <button type="button" onclick="irPagina(<?php echo $paginaActual - 1; ?>)" class="btn-nav btn-nav-secondary" style="padding:5px 10px;"><i class="fas fa-angle-left"></i> Anterior</button>
                         <?php endif; ?>
                         <?php
                         $inicio = max(1, $paginaActual - 2);
                         $fin    = min($totalPaginas, $paginaActual + 2);
                         for ($p = $inicio; $p <= $fin; $p++):
                         ?>
-                            <a href="<?php echo htmlspecialchars(urlPagina($p, $busqueda, $tipoBusqueda, $verCitas, $verArchivados)); ?>"
+                            <button type="button" onclick="irPagina(<?php echo $p; ?>)"
                                class="btn-nav <?php echo $p === $paginaActual ? 'btn-nav-primary' : 'btn-nav-secondary'; ?>"
                                style="padding:5px 10px; min-width:32px; text-align:center;">
                                 <?php echo $p; ?>
-                            </a>
+                            </button>
                         <?php endfor; ?>
                         <?php if ($paginaActual < $totalPaginas): ?>
-                            <a href="<?php echo htmlspecialchars(urlPagina($paginaActual + 1, $busqueda, $tipoBusqueda, $verCitas, $verArchivados)); ?>" class="btn-nav btn-nav-secondary" style="padding:5px 10px;">Siguiente <i class="fas fa-angle-right"></i></a>
-                            <a href="<?php echo htmlspecialchars(urlPagina($totalPaginas, $busqueda, $tipoBusqueda, $verCitas, $verArchivados)); ?>" class="btn-nav btn-nav-secondary" style="padding:5px 10px;" title="Última página"><i class="fas fa-angle-double-right"></i></a>
+                            <button type="button" onclick="irPagina(<?php echo $paginaActual + 1; ?>)" class="btn-nav btn-nav-secondary" style="padding:5px 10px;">Siguiente <i class="fas fa-angle-right"></i></button>
+                            <button type="button" onclick="irPagina(<?php echo $totalPaginas; ?>)" class="btn-nav btn-nav-secondary" style="padding:5px 10px;" title="Última página"><i class="fas fa-angle-double-right"></i></button>
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
@@ -374,6 +423,16 @@ $pageTitle = 'Historias Clínicas';
     </div>
 
     <script>
+        /**
+         * irPagina(n) — Navega a la página n de resultados.
+         * Usa el formulario POST oculto #formPaginacion para mantener
+         * los parámetros de búsqueda fuera de la URL (anti Google Safe Browsing).
+         */
+        function irPagina(num) {
+            document.getElementById('pagNumero').value = num;
+            document.getElementById('formPaginacion').submit();
+        }
+
         function confirmarAccion(id, nombre, tipo) {
             const modal = document.getElementById('modalAccion');
             const titulo = document.getElementById('modalTitle');
