@@ -28,6 +28,10 @@ $estadoActual  = $verArchivados ? 0 : 1;
 // Sanitización estricta de los parámetros de búsqueda (POST)
 $busqueda     = '';
 $tipoBusqueda = '';
+// Nuevos filtros de fecha para la vista de Citas
+$modoCitas    = 'proximas'; // valores posibles: 'proximas' | 'pasadas'
+$fechaInicio  = '';
+$fechaFin     = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // trim() → strip_tags() → htmlspecialchars(): triple capa anti-XSS
     $busqueda     = htmlspecialchars(strip_tags(trim($_POST['buscar']        ?? '')), ENT_QUOTES, 'UTF-8');
@@ -38,18 +42,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!in_array($tipoBusqueda, $tiposPermitidos, true)) {
         $tipoBusqueda = '';
     }
+
+    // Modo de citas: whitelist de valores permitidos
+    $modoRaw  = trim($_POST['modo_citas'] ?? 'proximas');
+    $modoCitas = in_array($modoRaw, ['proximas', 'pasadas'], true) ? $modoRaw : 'proximas';
+
+    // Fechas del rango: validar formato Y-m-d antes de usarlas en SQL
+    $fechaInicioRaw = trim($_POST['fecha_inicio'] ?? '');
+    $fechaFinRaw    = trim($_POST['fecha_fin']    ?? '');
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaInicioRaw) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaFinRaw)) {
+        $fechaInicio = $fechaInicioRaw;
+        $fechaFin    = $fechaFinRaw;
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Modo citas también puede venir por GET (enlace directo al toggle)
+    $modoRaw   = trim($_GET['modo_citas'] ?? 'proximas');
+    $modoCitas = in_array($modoRaw, ['proximas', 'pasadas'], true) ? $modoRaw : 'proximas';
 }
+
+// Derivar los flags booleanos que usan las funciones de BD
+$citasPasadas = ($verCitas && $modoCitas === 'pasadas');
 
 // Paginación (Soporta POST para mantener la búsqueda oculta, y GET para navegación directa)
 define('REGISTROS_POR_PAGINA', 50);
 $paginaActual  = max(1, (int) ($_POST['pagina'] ?? $_GET['pagina'] ?? 1));
 $offset        = ($paginaActual - 1) * REGISTROS_POR_PAGINA;
-$totalRegistros = contarPacientes($pdo, $busqueda, $tipoBusqueda, $estadoActual, $verCitas);
+$totalRegistros = contarPacientes($pdo, $busqueda, $tipoBusqueda, $estadoActual, $verCitas, $citasPasadas, $fechaInicio, $fechaFin);
 $totalPaginas   = max(1, (int) ceil($totalRegistros / REGISTROS_POR_PAGINA));
 if ($paginaActual > $totalPaginas) $paginaActual = $totalPaginas;
 
 // Una sola consulta: trae pacientes + tratamientos agrupados
-$pacientes = obtenerPacientes($pdo, $busqueda, $tipoBusqueda, $estadoActual, $verCitas, REGISTROS_POR_PAGINA, $offset);
+$pacientes = obtenerPacientes($pdo, $busqueda, $tipoBusqueda, $estadoActual, $verCitas, REGISTROS_POR_PAGINA, $offset, $citasPasadas, $fechaInicio, $fechaFin);
 
 // Totales para tarjetas de estadísticas (una sola consulta)
 $statsRow = $pdo->query(
@@ -219,7 +242,50 @@ $pageTitle = 'Historias Clínicas';
                     <?php endif; ?>
                 </form>
 
-                <!-- Formulario POST oculto para paginación --
+                <?php if ($verCitas): ?>
+                <!-- Barra de filtro de rango de fechas (solo visible en la vista Citas) -->
+                <form action="dashboard.php?ver=citas" method="POST" class="search-container" id="formFechas"
+                      style="margin-top: -8px; flex-wrap: wrap; gap: 10px; align-items: center;">
+                    <!-- Conservar parámetros del buscador al aplicar filtro de fechas -->
+                    <input type="hidden" name="buscar"        value="<?php echo htmlspecialchars($busqueda); ?>">
+                    <input type="hidden" name="tipo_busqueda" value="<?php echo htmlspecialchars($tipoBusqueda); ?>">
+                    <input type="hidden" name="ver"           value="citas">
+                    <input type="hidden" name="modo_citas"    value="<?php echo htmlspecialchars($modoCitas); ?>">
+
+                    <label style="font-size:0.82rem; color:var(--color-text-secondary); white-space:nowrap; display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-calendar-alt" style="color:var(--color-accent);"></i>
+                        Rango de fechas:
+                    </label>
+                    <input type="date" name="fecha_inicio" id="fecha_inicio"
+                           value="<?php echo htmlspecialchars($fechaInicio); ?>"
+                           style="padding:7px 10px; border-radius:8px; border:1px solid var(--color-border);
+                                  background:var(--color-bg-card); color:var(--color-text); font-size:0.85rem;
+                                  cursor:pointer;">
+                    <span style="color:var(--color-text-secondary); font-size:0.9rem;">—</span>
+                    <input type="date" name="fecha_fin" id="fecha_fin"
+                           value="<?php echo htmlspecialchars($fechaFin); ?>"
+                           style="padding:7px 10px; border-radius:8px; border:1px solid var(--color-border);
+                                  background:var(--color-bg-card); color:var(--color-text); font-size:0.85rem;
+                                  cursor:pointer;">
+                    <button type="submit" class="btn-buscar" style="padding:7px 14px;">
+                        <i class="fas fa-filter"></i> Aplicar
+                    </button>
+                    <?php if (!empty($fechaInicio) && !empty($fechaFin)): ?>
+                        <!-- Limpiar solo el rango de fechas; conserva búsqueda de texto y modo -->
+                        <a href="dashboard.php?ver=citas&modo_citas=<?php echo htmlspecialchars($modoCitas); ?>"
+                           class="btn-buscar" style="background:var(--color-text-secondary); padding:7px 14px;">
+                            <i class="fas fa-times"></i> Limpiar fechas
+                        </a>
+                        <span style="font-size:0.78rem; color:var(--color-accent); white-space:nowrap;">
+                            <?php echo date('d/m/Y', strtotime($fechaInicio)); ?>
+                            &mdash;
+                            <?php echo date('d/m/Y', strtotime($fechaFin)); ?>
+                        </span>
+                    <?php endif; ?>
+                </form>
+                <?php endif; ?>
+
+                <!-- Formulario POST oculto para paginación
                      Los botones de página hacen submit de este form
                      con el número de página deseado, preservando la búsqueda
                      actual sin exponerla en la URL. -->
@@ -228,7 +294,11 @@ $pageTitle = 'Historias Clínicas';
                     <input type="hidden" name="tipo_busqueda" id="pagTipoBusqueda"  value="<?php echo htmlspecialchars($tipoBusqueda); ?>">
                     <input type="hidden" name="pagina"        id="pagNumero"        value="1">
                     <?php if ($verCitas): ?>
-                        <input type="hidden" name="ver" value="citas">
+                        <input type="hidden" name="ver"        value="citas">
+                        <!-- Conservar modo y rango de fechas en la paginación -->
+                        <input type="hidden" name="modo_citas"   id="pagModoCitas"   value="<?php echo htmlspecialchars($modoCitas); ?>">
+                        <input type="hidden" name="fecha_inicio" id="pagFechaInicio" value="<?php echo htmlspecialchars($fechaInicio); ?>">
+                        <input type="hidden" name="fecha_fin"    id="pagFechaFin"    value="<?php echo htmlspecialchars($fechaFin); ?>">
                     <?php elseif ($verArchivados): ?>
                         <input type="hidden" name="ver" value="archivados">
                     <?php endif; ?>
@@ -262,16 +332,54 @@ $pageTitle = 'Historias Clínicas';
                         <h2 class="card-title">
                             <i class="fas <?php echo $verCitas ? 'fa-calendar-check' : ($verArchivados ? 'fa-archive' : 'fa-clipboard-list'); ?>"></i>
                             <?php
-                                if ($verCitas) echo "Citas Próximas";
-                                elseif ($verArchivados) echo "Historias Archivadas";
-                                else echo "Listado de Historias Clínicas";
+                                if ($verCitas) {
+                                    // Título dinámico según el modo de citas activo
+                                    echo $citasPasadas ? 'Citas Pasadas' : 'Citas Próximas';
+                                } elseif ($verArchivados) {
+                                    echo 'Historias Archivadas';
+                                } else {
+                                    echo 'Listado de Historias Clínicas';
+                                }
                             ?>
                         </h2>
-                        <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <span class="text-gray" style="font-size: 0.82rem;">
                                 <?php echo number_format($totalRegistros); ?> registros &mdash;
                                 página <?php echo $paginaActual; ?> de <?php echo $totalPaginas; ?>
                             </span>
+
+                            <?php if ($verCitas): ?>
+                            <!-- Toggle Citas Próximas / Citas Pasadas -->
+                            <div style="display:flex; gap:4px;">
+                                <!-- Botón Próximas: POST para preservar parámetros de búsqueda -->
+                                <form method="POST" action="dashboard.php?ver=citas" style="margin:0;">
+                                    <input type="hidden" name="ver"           value="citas">
+                                    <input type="hidden" name="modo_citas"    value="proximas">
+                                    <input type="hidden" name="buscar"        value="<?php echo htmlspecialchars($busqueda); ?>">
+                                    <input type="hidden" name="tipo_busqueda" value="<?php echo htmlspecialchars($tipoBusqueda); ?>">
+                                    <button type="submit"
+                                        class="btn-nav <?php echo !$citasPasadas ? 'btn-nav-primary' : 'btn-nav-secondary'; ?>"
+                                        style="padding:5px 10px; font-size:0.8rem;"
+                                        title="Ver citas desde hoy en adelante">
+                                        <i class="fas fa-calendar-check"></i> Próximas
+                                    </button>
+                                </form>
+                                <!-- Botón Pasadas: POST para preservar parámetros de búsqueda -->
+                                <form method="POST" action="dashboard.php?ver=citas" style="margin:0;">
+                                    <input type="hidden" name="ver"           value="citas">
+                                    <input type="hidden" name="modo_citas"    value="pasadas">
+                                    <input type="hidden" name="buscar"        value="<?php echo htmlspecialchars($busqueda); ?>">
+                                    <input type="hidden" name="tipo_busqueda" value="<?php echo htmlspecialchars($tipoBusqueda); ?>">
+                                    <button type="submit"
+                                        class="btn-nav <?php echo $citasPasadas ? 'btn-nav-primary' : 'btn-nav-secondary'; ?>"
+                                        style="padding:5px 10px; font-size:0.8rem;"
+                                        title="Ver citas anteriores a hoy">
+                                        <i class="fas fa-history"></i> Pasadas
+                                    </button>
+                                </form>
+                            </div>
+                            <?php endif; ?>
+
                             <?php if ($verArchivados || $verCitas): ?>
                                 <a href="dashboard.php" class="btn-nav btn-nav-secondary" style="padding: 6px 10px; font-size: 0.8rem;">
                                     <i class="fas fa-arrow-left"></i> Volver a Activos

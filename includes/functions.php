@@ -21,14 +21,35 @@ function obtenerTratamientos($pdo) {
 }
 
 /**
- * Contar total de pacientes (para paginación)
+ * Contar total de pacientes (para paginación).
+ *
+ * @param PDO    $pdo           Conexión PDO
+ * @param string $busqueda      Término de búsqueda (texto libre)
+ * @param string $tipoBusqueda  Campo por el que buscar (numero_historia|dni|nombre|tratamiento|'')
+ * @param int    $estado        Estado del paciente (1=activo, 0=archivado)
+ * @param bool   $soloCitas     Si true, limita a registros con fecha_ultima_cita IS NOT NULL
+ * @param bool   $citasPasadas  Si true, muestra citas con fecha_ultima_cita < CURRENT_DATE
+ * @param string $fechaInicio   Fecha inicio del rango (formato Y-m-d) — tiene prioridad sobre $citasPasadas
+ * @param string $fechaFin      Fecha fin del rango (formato Y-m-d)
  */
-function contarPacientes($pdo, $busqueda = '', $tipoBusqueda = '', $estado = 1, $soloCitas = false) {
+function contarPacientes($pdo, $busqueda = '', $tipoBusqueda = '', $estado = 1, $soloCitas = false, $citasPasadas = false, $fechaInicio = '', $fechaFin = '') {
     $sql = "SELECT COUNT(*) FROM pacientes p WHERE p.estado = :estado";
     $params = [':estado' => $estado];
 
     if ($soloCitas) {
-        $sql .= " AND p.fecha_ultima_cita >= CURRENT_DATE AND p.fecha_ultima_cita IS NOT NULL";
+        // Determinar el filtro de fecha según los parámetros recibidos
+        if (!empty($fechaInicio) && !empty($fechaFin)) {
+            // Rango explícito: filtra entre fecha_inicio y fecha_fin (inclusive)
+            $sql .= " AND p.fecha_ultima_cita BETWEEN :fecha_inicio AND :fecha_fin";
+            $params[':fecha_inicio'] = $fechaInicio;
+            $params[':fecha_fin']    = $fechaFin;
+        } elseif ($citasPasadas) {
+            // Modo citas pasadas: fecha de cita anterior a hoy y válida (>= 2000-01-01)
+            $sql .= " AND p.fecha_ultima_cita < CURRENT_DATE AND p.fecha_ultima_cita >= '2000-01-01'";
+        } else {
+            // Modo por defecto: citas próximas (desde hoy en adelante)
+            $sql .= " AND p.fecha_ultima_cita >= CURRENT_DATE AND p.fecha_ultima_cita IS NOT NULL";
+        }
     }
 
     if (!empty($busqueda)) {
@@ -81,8 +102,19 @@ function contarPacientes($pdo, $busqueda = '', $tipoBusqueda = '', $estado = 1, 
  * Obtener pacientes con información del doctor Y sus tratamientos en una sola consulta.
  * Usa GROUP_CONCAT para evitar el problema N+1 (una consulta extra por paciente).
  * Soporta paginación con $limite y $offset.
+ *
+ * @param PDO    $pdo           Conexión PDO
+ * @param string $busqueda      Término de búsqueda (texto libre)
+ * @param string $tipoBusqueda  Campo por el que buscar (numero_historia|dni|nombre|tratamiento|'')
+ * @param int    $estado        Estado del paciente (1=activo, 0=archivado)
+ * @param bool   $soloCitas     Si true, limita a registros con fecha_ultima_cita IS NOT NULL
+ * @param int    $limite        Registros por página
+ * @param int    $offset        Desplazamiento para paginación
+ * @param bool   $citasPasadas  Si true, muestra citas con fecha_ultima_cita < CURRENT_DATE
+ * @param string $fechaInicio   Fecha inicio del rango (formato Y-m-d) — tiene prioridad sobre $citasPasadas
+ * @param string $fechaFin      Fecha fin del rango (formato Y-m-d)
  */
-function obtenerPacientes($pdo, $busqueda = '', $tipoBusqueda = '', $estado = 1, $soloCitas = false, $limite = 50, $offset = 0) {
+function obtenerPacientes($pdo, $busqueda = '', $tipoBusqueda = '', $estado = 1, $soloCitas = false, $limite = 50, $offset = 0, $citasPasadas = false, $fechaInicio = '', $fechaFin = '') {
     // Subconsulta de tratamientos agrupados por paciente
     $sql = "SELECT p.*, d.nombre as doctor_nombre,
                 GROUP_CONCAT(t.nombre ORDER BY t.nombre SEPARATOR '||') as tratamientos_nombres
@@ -95,7 +127,19 @@ function obtenerPacientes($pdo, $busqueda = '', $tipoBusqueda = '', $estado = 1,
     $params = [':estado' => $estado];
 
     if ($soloCitas) {
-        $sql .= " AND p.fecha_ultima_cita >= CURRENT_DATE AND p.fecha_ultima_cita IS NOT NULL";
+        // Determinar el filtro de fecha según los parámetros recibidos
+        if (!empty($fechaInicio) && !empty($fechaFin)) {
+            // Rango explícito: filtra entre fecha_inicio y fecha_fin (inclusive)
+            $sql .= " AND p.fecha_ultima_cita BETWEEN :fecha_inicio AND :fecha_fin";
+            $params[':fecha_inicio'] = $fechaInicio;
+            $params[':fecha_fin']    = $fechaFin;
+        } elseif ($citasPasadas) {
+            // Modo citas pasadas: fecha de cita anterior a hoy y válida (>= 2000-01-01)
+            $sql .= " AND p.fecha_ultima_cita < CURRENT_DATE AND p.fecha_ultima_cita >= '2000-01-01'";
+        } else {
+            // Modo por defecto: citas próximas (desde hoy en adelante)
+            $sql .= " AND p.fecha_ultima_cita >= CURRENT_DATE AND p.fecha_ultima_cita IS NOT NULL";
+        }
     }
 
     if (!empty($busqueda)) {
@@ -141,7 +185,10 @@ function obtenerPacientes($pdo, $busqueda = '', $tipoBusqueda = '', $estado = 1,
 
     $sql .= " GROUP BY p.id";
     if ($soloCitas) {
-        $sql .= " ORDER BY p.fecha_ultima_cita ASC";
+        // Ordenar: pasadas muestran la más reciente primero; próximas, la más cercana primero
+        $sql .= $citasPasadas
+            ? " ORDER BY p.fecha_ultima_cita DESC"
+            : " ORDER BY p.fecha_ultima_cita ASC";
     } else {
         $sql .= " ORDER BY CAST(p.numero_historia AS UNSIGNED) DESC";
     }
