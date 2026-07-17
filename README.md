@@ -18,7 +18,7 @@ El ecosistema está diseñado en módulos de alta eficiencia, cubriendo integral
 
 ### 🧬 1. Gestión Integral de Pacientes (Historias Clínicas)
 - **Registro Centralizado 360°:** Datos personales, antecedentes médicos y canales de contacto rápido.
-- **Odontogramas Digitales Interactivos:** Interfaz visual precisa para mapear el estado dental del paciente.
+- **Odontogramas Digitales Interactivos:** Interfaz visual (SVG) basada en el estándar FDI, soporte para dentición Adulto/Infantil, interacción dual (pintado rápido y diagnóstico detallado) y guardado en tiempo real sin recargas (Fetch API).
 - **Galería Fotográfica Clínica:** Carga y gestión inteligente de fotografías intraorales, extraorales y radiografías.
 - **Historial de Evolución Terapéutica:** Seguimiento cronológico y detallado de cada tratamiento y diagnóstico aplicado.
 - **Smart Archive (Bóveda Segura):** Sistema de archivado (Soft-Delete) para mantener la interfaz principal limpia, resguardando el historial clínico permanentemente.

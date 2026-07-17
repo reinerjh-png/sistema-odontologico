@@ -361,7 +361,7 @@ $pageTitle = 'Historias Clínicas';
                                         class="btn-nav <?php echo !$citasPasadas ? 'btn-nav-primary' : 'btn-nav-secondary'; ?>"
                                         style="padding:5px 10px; font-size:0.8rem;"
                                         title="Ver citas desde hoy en adelante">
-                                        <i class="fas fa-calendar-check"></i> Próximas
+                                        <i class="fas fa-calendar-check"></i> Hoy
                                     </button>
                                 </form>
                                 <!-- Botón Pasadas: POST para preservar parámetros de búsqueda -->

@@ -28,6 +28,9 @@ $isAdmin = isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] === 'admi
         <a href="<?= $basePath ?>callcenter/index.php" class="sidebar-link <?= $currentPage === 'callcenter' ? 'active' : '' ?>">
             <i class="fas fa-phone-alt"></i><span>Call Center</span>
         </a>
+        <a href="<?= $basePath ?>odontograma/index.php" class="sidebar-link <?= $currentPage === 'odontograma' ? 'active' : '' ?>">
+            <i class="fas fa-tooth"></i><span>Odontograma</span>
+        </a>
 
         <?php if ($isAdmin): ?>
         <div class="sidebar-divider"></div>

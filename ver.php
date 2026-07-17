@@ -238,6 +238,7 @@ $pageTitle = 'Detalle de Historia Clínica';
 
                     <div class="detalle-acciones">
                         <a href="dashboard.php<?php echo $paciente['estado'] == 0 ? '?ver=archivados' : ''; ?>" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Listado</a>
+                        <a href="odontograma/index.php?id_paciente=<?php echo $paciente['id']; ?>" class="btn btn-success"><i class="fas fa-tooth"></i> Odontograma</a>
                         <a href="editar.php?id=<?php echo $paciente['id']; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> Editar Historia</a>
                     </div>
                 </div>
