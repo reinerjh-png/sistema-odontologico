@@ -361,7 +361,12 @@ function actualizarPaciente($pdo, $id, $datos, $tratamientos = []) {
  * Obtener un paciente por ID (independientemente del estado)
  */
 function obtenerPacientePorId($pdo, $id) {
-    $stmt = $pdo->prepare("SELECT * FROM pacientes WHERE id = ?");
+    $stmt = $pdo->prepare(
+        "SELECT p.*, d.nombre AS doctor_nombre
+         FROM pacientes p
+         LEFT JOIN doctores d ON p.doctor_id = d.id
+         WHERE p.id = ?"
+    );
     $stmt->execute([$id]);
     return $stmt->fetch();
 }

@@ -76,7 +76,7 @@ $doctores = $pdo->query("SELECT d.*,
     (SELECT COUNT(*) FROM pacientes WHERE doctor_id = d.id AND estado = 1) as total_pacientes
     FROM doctores d ORDER BY d.estado DESC, d.nombre ASC")->fetchAll();
 
-$currentPage = 'admin';
+$currentPage = 'doctores';
 $pageTitle = 'Gestión de Doctores';
 ?>
 <!DOCTYPE html>

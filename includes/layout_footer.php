@@ -14,7 +14,8 @@ function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('sidebar-open');
         document.getElementById('sidebarOverlay').classList.toggle('active');
     } else {
-        document.body.classList.toggle('sidebar-collapsed');
+        const collapsed = document.body.classList.toggle('sidebar-collapsed');
+        localStorage.setItem('sidebar-collapsed', collapsed);
     }
 }
 </script>

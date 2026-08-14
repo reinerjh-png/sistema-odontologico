@@ -126,7 +126,7 @@ $usuarios = $pdo->query("SELECT u.*,
     (SELECT MAX(created_at) FROM actividad_log WHERE usuario_id = u.id) as ultima_actividad
     FROM usuarios u ORDER BY u.estado DESC, u.rol ASC, u.nombre_completo ASC")->fetchAll();
 
-$currentPage = 'admin';
+$currentPage = 'usuarios';
 $pageTitle = 'Gestión de Usuarios';
 ?>
 <!DOCTYPE html>

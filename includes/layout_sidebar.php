@@ -7,6 +7,12 @@
 $currentPage = $currentPage ?? '';
 $isAdmin = isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] === 'admin';
 ?>
+<script>
+    // Restore sidebar state from localStorage before content renders to prevent flickering
+    if (localStorage.getItem('sidebar-collapsed') === 'true') {
+        document.body.classList.add('sidebar-collapsed');
+    }
+</script>
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <a href="<?= $basePath ?>dashboard.php" class="sidebar-logo-link">

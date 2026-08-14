@@ -361,7 +361,7 @@ $pageTitle = 'Historias Clínicas';
                                         class="btn-nav <?php echo !$citasPasadas ? 'btn-nav-primary' : 'btn-nav-secondary'; ?>"
                                         style="padding:5px 10px; font-size:0.8rem;"
                                         title="Ver citas desde hoy en adelante">
-                                        <i class="fas fa-calendar-check"></i> Hoy
+                                        <i class="fas fa-calendar-check"></i> Próximas
                                     </button>
                                 </form>
                                 <!-- Botón Pasadas: POST para preservar parámetros de búsqueda -->
@@ -388,6 +388,11 @@ $pageTitle = 'Historias Clínicas';
                         </div>
                     </div>
 
+                    <style>
+                        .fila-paciente { cursor: pointer; }
+                        .fila-paciente:hover { background: rgba(74,144,217,0.06) !important; outline: 2px solid transparent; }
+                        .fila-paciente:active { background: rgba(74,144,217,0.14) !important; }
+                    </style>
                     <div class="table-container">
                         <table class="table">
                             <thead>
@@ -417,7 +422,7 @@ $pageTitle = 'Historias Clínicas';
                                 <?php else: ?>
                                     <?php foreach ($pacientes as $paciente): ?>
                                         <?php $tratamientosPaciente = $paciente['tratamientos']; ?>
-                                        <tr>
+                                        <tr class="fila-paciente" data-href="ver.php?id=<?php echo $paciente['id']; ?>" ondblclick="window.location.href=this.dataset.href" title="Doble clic para ver detalles">
                                             <td><strong class="text-accent"><?php echo htmlspecialchars($paciente['numero_historia']); ?></strong></td>
                                             <td><?php echo htmlspecialchars($paciente['dni']); ?></td>
                                             <td><?php echo htmlspecialchars($paciente['nombres']); ?></td>

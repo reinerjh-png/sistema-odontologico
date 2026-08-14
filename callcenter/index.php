@@ -287,7 +287,10 @@ $pageTitle = 'Call Center';
 
             <main class="main-content">
                 
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; gap: 10px;">
+                    <a href="../dashboard.php" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                    </a>
                     <a href="reporte.php" class="btn btn-secondary">
                         <i class="fas fa-chart-bar"></i> Ver Reportes Call Center
                     </a>

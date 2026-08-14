@@ -35,7 +35,7 @@ $actividades = $stmt->fetchAll();
 
 $todosUsuarios = $pdo->query("SELECT id, usuario, nombre_completo FROM usuarios ORDER BY nombre_completo")->fetchAll();
 
-$currentPage = 'admin';
+$currentPage = 'actividad';
 $pageTitle = 'Registro de Actividad';
 ?>
 <!DOCTYPE html>

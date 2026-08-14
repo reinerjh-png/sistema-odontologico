@@ -72,6 +72,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($datos['numero_historia'])) $errores[] = "El número de historia es obligatorio";
         if (empty($datos['nombres'])) $errores[] = "Los nombres son obligatorios";
         
+        $hasFecha = !empty($datos['fecha_ultima_cita']);
+        $hasHora = !empty($_POST['hora_cita_hora']);
+        $hasAmpm = !empty($_POST['hora_cita_ampm']);
+        
+        if ($hasFecha || $hasHora || $hasAmpm) {
+            if (!$hasFecha || !$hasHora || !$hasAmpm) {
+                $errores[] = "Si desea agendar una cita, debe especificar tanto la fecha como la hora completa (incluyendo AM/PM)";
+            }
+        }
+        
         // Verificar si el número de historia ya existe (excluyendo el actual)
         $stmt = $pdo->prepare("SELECT id FROM pacientes WHERE numero_historia = ? AND id != ? AND estado = 1");
         $stmt->execute([$datos['numero_historia'], $id]);
@@ -229,12 +239,12 @@ $pageTitle = 'Editar Historia Clínica';
                                 <label class="form-label">Tratamientos</label>
                                 <div class="tratamientos-container">
                                     <?php foreach ($tratamientos as $tratamiento): ?>
-                                        <div class="tratamiento-item">
+                                        <label class="tratamiento-item" for="trat_<?= $tratamiento['id'] ?>">
                                             <input type="checkbox" name="tratamientos[]" value="<?= $tratamiento['id'] ?>"
                                                    id="trat_<?= $tratamiento['id'] ?>"
                                                    <?= in_array($tratamiento['id'], $tratamientosIds) ? 'checked' : '' ?>>
-                                            <label for="trat_<?= $tratamiento['id'] ?>"><?= htmlspecialchars($tratamiento['nombre']) ?></label>
-                                        </div>
+                                            <span><?= htmlspecialchars($tratamiento['nombre']) ?></span>
+                                        </label>
                                     <?php endforeach; ?>
                                 </div>
                             </div>
@@ -285,6 +295,24 @@ $pageTitle = 'Editar Historia Clínica';
     </div>
 
     <script>
+        // Validation for Appointment Date & Time
+        document.getElementById('formHistoria').addEventListener('submit', function(e) {
+            const fecha = document.querySelector('input[name="fecha_ultima_cita"]').value;
+            const hora = document.querySelector('select[name="hora_cita_hora"]').value;
+            const ampm = document.querySelector('select[name="hora_cita_ampm"]').value;
+            
+            const hasFecha = fecha !== '';
+            const hasHora = hora !== '' || ampm !== '';
+            
+            if (hasFecha || hasHora) {
+                if (fecha === '' || hora === '' || ampm === '') {
+                    e.preventDefault();
+                    alert('Si desea agendar una cita, debe seleccionar tanto la fecha como la hora completa (con AM/PM).');
+                    return false;
+                }
+            }
+        });
+
         // Drag & Drop
         const zone = document.getElementById('uploadZone');
         zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('upload-zone-active'); });

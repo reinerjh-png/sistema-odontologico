@@ -736,12 +736,13 @@ select.form-control option { background: var(--color-surface); color: var(--colo
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: var(--transition);
+  font-size: 0.85rem;
+  color: var(--color-text);
 }
 
 .tratamiento-item:hover { border-color: var(--color-accent); background: rgba(74,144,217,0.04); }
 .tratamiento-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--color-accent); cursor: pointer; }
-.tratamiento-item label { cursor: pointer; font-size: 0.85rem; color: var(--color-text); }
-.tratamiento-item input[type="checkbox"]:checked + label { color: var(--color-accent); font-weight: 600; }
+.tratamiento-item input[type="checkbox"]:checked ~ span { color: var(--color-accent); font-weight: 600; }
 
 /* =====================================================
    FORM BUTTONS

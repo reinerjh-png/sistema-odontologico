@@ -51,6 +51,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($datos['numero_historia'])) $errores[] = "El número de historia es obligatorio";
         if (empty($datos['nombres'])) $errores[] = "Los nombres son obligatorios";
         
+        $hasFecha = !empty($datos['fecha_ultima_cita']);
+        $hasHora = !empty($_POST['hora_cita_hora']);
+        $hasAmpm = !empty($_POST['hora_cita_ampm']);
+        
+        if ($hasFecha || $hasHora || $hasAmpm) {
+            if (!$hasFecha || !$hasHora || !$hasAmpm) {
+                $errores[] = "Si desea agendar una cita, debe especificar tanto la fecha como la hora completa (incluyendo AM/PM)";
+            }
+        }
+        
         // Verificar si el número de historia ya existe
         $stmt = $pdo->prepare("SELECT id FROM pacientes WHERE numero_historia = ? AND estado = 1");
         $stmt->execute([$datos['numero_historia']]);
@@ -199,12 +209,12 @@ $pageTitle = 'Nueva Historia Clínica';
                                 <label class="form-label">Tratamientos <span class="text-gray" style="font-weight: normal; text-transform: none;">(Seleccione uno o más)</span></label>
                                 <div class="tratamientos-container">
                                     <?php foreach ($tratamientos as $tratamiento): ?>
-                                        <div class="tratamiento-item">
+                                        <label class="tratamiento-item" for="trat_<?php echo $tratamiento['id']; ?>">
                                             <input type="checkbox" name="tratamientos[]" value="<?php echo $tratamiento['id']; ?>"
                                                    id="trat_<?php echo $tratamiento['id']; ?>"
                                                    <?php echo (isset($_POST['tratamientos']) && in_array($tratamiento['id'], $_POST['tratamientos'])) ? 'checked' : ''; ?>>
-                                            <label for="trat_<?php echo $tratamiento['id']; ?>"><?php echo htmlspecialchars($tratamiento['nombre']); ?></label>
-                                        </div>
+                                            <span><?php echo htmlspecialchars($tratamiento['nombre']); ?></span>
+                                        </label>
                                     <?php endforeach; ?>
                                 </div>
                             </div>
@@ -225,5 +235,24 @@ $pageTitle = 'Nueva Historia Clínica';
             <?php include 'includes/layout_footer.php'; ?>
         </div>
     </div>
+    <script>
+        // Validation for Appointment Date & Time
+        document.getElementById('formHistoria').addEventListener('submit', function(e) {
+            const fecha = document.querySelector('input[name="fecha_ultima_cita"]').value;
+            const hora = document.querySelector('select[name="hora_cita_hora"]').value;
+            const ampm = document.querySelector('select[name="hora_cita_ampm"]').value;
+            
+            const hasFecha = fecha !== '';
+            const hasHora = hora !== '' || ampm !== '';
+            
+            if (hasFecha || hasHora) {
+                if (fecha === '' || hora === '' || ampm === '') {
+                    e.preventDefault();
+                    alert('Si desea agendar una cita, debe seleccionar tanto la fecha como la hora completa (con AM/PM).');
+                    return false;
+                }
+            }
+        });
+    </script>
 </body>
 </html>
